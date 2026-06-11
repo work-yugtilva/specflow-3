@@ -37,3 +37,8 @@ Thumbs.db
 # misc
 *.log
 npm-debug.log*
+
+# Root-level original source docs (copies live in docs/source/)
+SpecFlow_*.pdf
+SpecFlow_*.md
+project/
