@@ -1,6 +1,7 @@
-from httpx import AsyncClient, ASGITransport
-from specflow.main import app
 import pytest
+from httpx import ASGITransport, AsyncClient
+
+from specflow.main import app
 
 
 @pytest.mark.asyncio
