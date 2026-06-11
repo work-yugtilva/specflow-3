@@ -15,7 +15,7 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - run: pip install ruff==0.7.0 mypy==1.11.2
+      - run: pip install -e ".[dev]"
       - run: ruff check specflow/
       - run: mypy specflow/ --strict --ignore-missing-imports
 
@@ -28,8 +28,8 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - run: pip install -e "specflow/[dev]"
-      - run: pytest tests/unit tests/integration -v --tb=short 2>/dev/null || pytest tests/ -v --tb=short --ignore=tests/api
+      - run: pip install -e ".[dev]"
+      - run: pytest tests/unit tests/integration -v --tb=short
 
   # Context 3: pytest api
   test-api:
@@ -40,8 +40,8 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - run: pip install -e "specflow/[dev]"
-      - run: pytest tests/api -v --tb=short 2>/dev/null || echo "No API tests yet — pass"
+      - run: pip install -e ".[dev]"
+      - run: pytest tests/api -v --tb=short
 
   # Context 4: tsc + eslint + next-build
   build-web:
@@ -85,16 +85,14 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Check migration files are not empty and follow naming convention
+      - name: Check migration files are not empty
         run: |
           files=$(find supabase/migrations -name "*.sql" 2>/dev/null)
           if [ -z "$files" ]; then
             echo "No migrations yet — pass"
           else
             for f in $files; do
-              if [ ! -s "$f" ]; then
-                echo "Empty migration: $f" && exit 1
-              fi
+              if [ ! -s "$f" ]; then echo "Empty migration: $f" && exit 1; fi
             done
             echo "All migrations non-empty"
           fi
