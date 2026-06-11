@@ -23,6 +23,9 @@ dev = [
     "httpx==0.27.2",
 ]
 
+[tool.hatch.build.targets.wheel]
+packages = ["specflow"]
+
 [tool.ruff]
 target-version = "py312"
 line-length = 100
