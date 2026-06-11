@@ -1,0 +1,45 @@
+name: Deploy
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+env:
+  VERCEL_ORG_ID: team_fHFv0O7692aJshGuyqSWvRhe
+  VERCEL_PROJECT_ID: prj_GHjpL1rritYk7oUBRwn5syGCygft
+
+jobs:
+  deploy-preview:
+    name: deploy-preview
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - run: npm install -g vercel@latest
+      - run: vercel pull --yes --environment=preview --token=${{ secrets.VERCEL_TOKEN }}
+        working-directory: web
+      - run: vercel build --token=${{ secrets.VERCEL_TOKEN }}
+        working-directory: web
+      - run: vercel deploy --prebuilt --token=${{ secrets.VERCEL_TOKEN }}
+        working-directory: web
+
+  deploy-prod:
+    name: deploy-prod
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - run: npm install -g vercel@latest
+      - run: vercel pull --yes --environment=production --token=${{ secrets.VERCEL_TOKEN }}
+        working-directory: web
+      - run: vercel build --prod --token=${{ secrets.VERCEL_TOKEN }}
+        working-directory: web
+      - run: vercel deploy --prebuilt --prod --token=${{ secrets.VERCEL_TOKEN }}
+        working-directory: web
