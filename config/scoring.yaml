@@ -1,0 +1,11 @@
+weights:
+  frequency: 0.5
+  severity: 0.3
+  recency: 0.2
+
+severity_map:
+  low: 0.33
+  medium: 0.66
+  high: 1.0
+
+recency_half_life_days: 45

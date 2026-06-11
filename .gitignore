@@ -1,0 +1,39 @@
+# deps
+node_modules/
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+
+# Next.js
+web/.next/
+web/out/
+web/build/
+
+# env — never commit secrets
+.env
+.env.local
+.env.*.local
+.env.production
+
+# test artifacts
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+coverage/
+htmlcov/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+
+# Vercel
+.vercel/
+
+# misc
+*.log
+npm-debug.log*
