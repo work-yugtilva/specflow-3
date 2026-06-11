@@ -2,17 +2,20 @@ FROM python:3.12-slim
 
 WORKDIR /app
 
-COPY specflow/pyproject.toml specflow/
+COPY pyproject.toml ./
 RUN pip install --no-cache-dir hatchling && \
-    pip install --no-cache-dir -e specflow/
+    pip install --no-cache-dir -e .
 
 COPY specflow/ specflow/
 COPY config/ config/
 
 ENV PYTHONUNBUFFERED=1
+ENV SERVICE=api
 
-# Three start commands, one image:
-# api:    uvicorn specflow.main:app --host 0.0.0.0 --port 8000
-# worker: python -m specflow.worker.main
-# mcp:    uvicorn specflow.mcp.main:app --host 0.0.0.0 --port 8001
-CMD ["uvicorn", "specflow.main:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD if [ "$SERVICE" = "api" ]; then \
+      exec uvicorn specflow.main:app --host 0.0.0.0 --port 8000; \
+    elif [ "$SERVICE" = "worker" ]; then \
+      exec python -m specflow.worker.main; \
+    else \
+      exec uvicorn specflow.mcp.main:app --host 0.0.0.0 --port 8001; \
+    fi
