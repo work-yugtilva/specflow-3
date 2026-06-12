@@ -12,3 +12,10 @@ create trigger audit_log_immutable before update or delete on audit_log
   for each statement execute function raise_immutable();
 create trigger verdicts_immutable before update or delete on verdicts
   for each statement execute function raise_immutable();
+
+-- TRUNCATE is a third erase path (default ACLs hand it to API roles): close it both ways too
+revoke truncate on audit_log, verdicts from public, anon, authenticated, service_role;
+create trigger audit_log_no_truncate before truncate on audit_log
+  for each statement execute function raise_immutable();
+create trigger verdicts_no_truncate before truncate on verdicts
+  for each statement execute function raise_immutable();

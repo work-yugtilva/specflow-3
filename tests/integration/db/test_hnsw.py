@@ -12,7 +12,8 @@ def test_hnsw_index_scan_on_vector_query(db):
         "SELECT gen_random_uuid(), %s, %s, 'v' || i, 0, 1, v.vec "
         "FROM generate_series(1, 1000) AS i, "
         "LATERAL (SELECT ('[' || string_agg(random()::text, ',') || ']')::vector(1536) AS vec "
-        "         FROM generate_series(1, 1536 + (i - i))) v",  # (i-i) correlates: fresh vector per row
+        # (i - i) correlates the LATERAL: fresh random vector per row
+        "         FROM generate_series(1, 1536 + (i - i))) v",
         (WS_A, DOC_A),
     )
     db.execute("ANALYZE chunks")

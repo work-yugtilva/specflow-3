@@ -31,3 +31,15 @@ def test_trigger_lock_update_raises_even_for_superuser(db, table):
 def test_trigger_lock_delete_raises_even_for_superuser(db, table):
     with pytest.raises(psycopg.errors.RaiseException, match="append-only"):
         db.execute(f"DELETE FROM {table}")  # noqa: S608
+
+
+@pytest.mark.parametrize("table", TABLES)
+def test_truncate_denied_for_authenticated(db, table):
+    with user_a(db) as cur, pytest.raises(psycopg.errors.InsufficientPrivilege):
+        cur.execute(f"TRUNCATE {table}")  # noqa: S608
+
+
+@pytest.mark.parametrize("table", TABLES)
+def test_truncate_trigger_raises_even_for_superuser(db, table):
+    with pytest.raises(psycopg.errors.RaiseException, match="append-only"):
+        db.execute(f"TRUNCATE {table}")  # noqa: S608
