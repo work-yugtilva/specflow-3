@@ -5,7 +5,7 @@ Runs as `authenticated` with request.jwt.claims per case. service_role proves no
 import psycopg
 import pytest
 
-from .conftest import OPP_B, RUN_B, SPEC_B_DRAFT, WS_A, WS_B, user_a, user_a_member
+from .conftest import OPP_B, RUN_B, SPEC_B_DRAFT, WS_A, WS_B, user_a, user_a_member, user_b
 from .tables import IMMUTABLE, OWNER_GATED, PARENT_TABLES, WS_TABLES
 
 PARENT_B_ID = {"opportunities": OPP_B, "specs": SPEC_B_DRAFT, "pipeline_runs": RUN_B}
@@ -38,6 +38,14 @@ def test_select_parent_scoped_cross_tenant_empty(db, table, fk):
 def test_select_own_tenant_visible(db, table):
     with user_a_member(db) as cur:
         cur.execute(f"SELECT count(*) FROM {table} WHERE workspace_id = %s", (WS_A,))  # noqa: S608
+        assert cur.fetchone()[0] >= 1
+
+
+@pytest.mark.parametrize("table", [t for t in WS_TABLES if t not in OWNER_GATED])
+def test_select_ws_b_sees_own_rows(db, table):
+    """Guards the cross-tenant-empty tests against vacuous passes (missing WS B seed)."""
+    with user_b(db) as cur:
+        cur.execute(f"SELECT count(*) FROM {table} WHERE workspace_id = %s", (WS_B,))  # noqa: S608
         assert cur.fetchone()[0] >= 1
 
 
