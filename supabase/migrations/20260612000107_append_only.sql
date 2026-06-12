@@ -1,9 +1,13 @@
 -- Tech Stack §5: audit_log + verdicts append-only — REVOKE and trigger, both locks.
 
+-- image default ACLs hand TRUNCATE/TRIGGER/REFERENCES/MAINTAIN to API roles;
+-- TRUNCATE bypasses RLS — strip all four everywhere
+revoke truncate, trigger, references, maintain on all tables in schema public from anon, authenticated;
+
 revoke update, delete on audit_log from public, anon, authenticated, service_role;
 revoke update, delete on verdicts from public, anon, authenticated, service_role;
 
-create function raise_immutable() returns trigger language plpgsql as $$
+create function raise_immutable() returns trigger language plpgsql set search_path = '' as $$
 begin
   raise exception 'append-only table % — % forbidden', tg_table_name, tg_op;
 end $$;

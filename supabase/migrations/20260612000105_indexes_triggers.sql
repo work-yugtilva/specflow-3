@@ -7,7 +7,7 @@ create index on chunks (workspace_id, posted_at);
 create index on chunks (workspace_id, identity_id);
 create index on integration_events (workspace_id, provider, processed_at) where processed_at is null;
 
-create function chunks_tsv_update() returns trigger language plpgsql as $$
+create function chunks_tsv_update() returns trigger language plpgsql set search_path = '' as $$
 begin
   new.tsv := to_tsvector('english', coalesce(new.text, ''));
   return new;

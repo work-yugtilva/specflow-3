@@ -22,7 +22,12 @@ grant usage on schema public to mcp_reader;
 grant mcp_reader to postgres;  -- lets admin/test sessions assume the role (parity with authenticated)
 grant select on opportunity_frequency, approved_specs to mcp_reader;
 
--- Hardened supabase images grant API roles no DML by default — explicit grants here;
--- RLS (0108) constrains rows, 0107 revokes append-only tables AFTER these grants.
+-- Supabase image default ACLs give API roles only TRUNCATE/TRIGGER/REFERENCES/MAINTAIN —
+-- no DML. Explicit DML grants here; RLS (0108) constrains rows, 0107 locks append-only after.
 grant select, insert, update, delete on all tables in schema public to authenticated, service_role;
 grant usage, select on all sequences in schema public to authenticated, service_role;
+
+-- the broad grant above covers the two definer views (owner postgres bypasses RLS):
+-- without this revoke, ANY authenticated JWT reads every tenant's approved specs via
+-- PostgREST /rest/v1/approved_specs. Views stay mcp_reader/service_role only.
+revoke all on opportunity_frequency, approved_specs from anon, authenticated;

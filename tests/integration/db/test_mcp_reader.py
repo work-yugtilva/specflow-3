@@ -44,3 +44,12 @@ def test_draft_spec_unreachable_via_view_predicates(db):
     with as_role(db, "mcp_reader") as cur:
         cur.execute("SELECT count(*) FROM approved_specs WHERE ticket_key = 'SPF-1'")
         assert cur.fetchone()[0] == 0
+
+
+def test_views_not_readable_by_authenticated(db):
+    """Definer views bypass RLS — any tenant JWT must NOT reach them (PostgREST surface)."""
+    from .conftest import user_a
+
+    for view in ("approved_specs", "opportunity_frequency"):
+        with user_a(db) as cur, pytest.raises(psycopg.errors.InsufficientPrivilege):
+            cur.execute(f"SELECT * FROM {view} LIMIT 1")  # noqa: S608
