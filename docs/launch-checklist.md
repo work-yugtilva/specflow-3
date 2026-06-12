@@ -37,6 +37,10 @@ Harvested from next-forge production patterns. Stack adopted: none. Checklist on
 - [ ] Sentry cron check-ins registered for all five periodic tasks
 - [ ] PostHog project key set; `workspace_created`, `upload_*`, `card_*` events wired
 
+## Auth Email
+
+- [ ] Resend custom SMTP (plan §11) is LOGIN-critical, not digest-critical — Supabase's built-in mailer is rate-limited and not production-grade. Live before partner #1's first sign-in.
+
 ## Pre-Launch
 
 - [ ] Branch protection active on `main` — all 7 CI contexts required

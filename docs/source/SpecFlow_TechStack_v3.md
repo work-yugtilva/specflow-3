@@ -40,7 +40,7 @@
 | Integrations, ticket/support class | **Nango Cloud**: Linear, Jira, Intercom, Zendesk (OAuth + webhook normalization + sync) | Four hand-rolled OAuth flows | At 7+ providers total, unified middleware pays for itself — the threshold v2 set is met by the full product |
 | Outcome analytics | Amplitude Export API + Mixpanel Raw Export, direct scheduled pulls | Nango (no good fit), event SDK embedding | Batch read-only pulls; keys in Vault |
 | MCP server | Official `mcp` Python SDK ≥1.2, Streamable HTTP, separate Railway service at `mcp.specflow.ai` | stdio transport, REST-pretending-to-be-MCP | Remote multi-tenant server ⇒ HTTP; stdio is local-only |
-| Auth | Supabase Auth: magic link + Google OAuth + **SAML 2.0 add-on** for SSO | Clerk (stays killed), WorkOS | SAML inside the existing IdP keeps sessions/RLS unchanged; WorkOS means bridging two identity systems |
+| Auth | Supabase Auth: magic link (sole Phase 1 method; Google OAuth deferred per ADR-005; SAML stub until a contract funds the upgrade) | Clerk (stays killed), WorkOS | One Supabase identity system keeps sessions/RLS unchanged; WorkOS means bridging two identity systems |
 | Roles | `owner` · `member`, plus `is_operator` JWT claim (founder only) | YC brief's owner/PM/engineer/reviewer matrix | Permissions only fork at admin actions; reviewer/engineer are *attributions* (recorded everywhere), not permissions. Role theater rejected |
 | File storage | Supabase Storage, per-workspace prefix, signed direct uploads | Cloudflare R2 | One fewer vendor; egress is rounding error |
 | Email | Resend: SMTP for Supabase Auth mail, API + React Email for digests, open webhooks → PostHog | SES, Postmark | Carried |
@@ -60,7 +60,7 @@
 
 **Next.js 14.2 App Router, React 18.3, TypeScript strict.** Server components fetch initial board/card payloads from the FastAPI `/v1` surface (never PostgREST directly — one API surface, one auth path); client interactivity hydrates through TanStack Query v5 with query keys derived from route params. Mutations invalidate by key; optimistic updates only on verdicts (the one interaction where latency is felt).
 
-**Session:** `@supabase/ssr` manages the HttpOnly Secure cookie; the JWT never touches `localStorage` or client state. Auth pages are custom (`/login`, `/auth/callback`, `/invite/[token]`) — magic link with 60 s resend cooldown, Google OAuth, and SAML-initiated login for SSO workspaces (Supabase handles the SAML dance; the FE only renders "Continue with SSO" when the email domain maps to a registered IdP via `GET /v1/auth/sso-check?domain=`).
+**Session:** `@supabase/ssr` manages the HttpOnly Secure cookie; the JWT never touches `localStorage` or client state. Auth pages are custom (`/login`, `/auth/callback`, `/invite/[token]`) — magic link with 60 s resend cooldown is the sole Phase 1 sign-in method; Google OAuth is deferred per ADR-005; SAML remains a stub until a contract funds the upgrade. The FE only renders "Continue with SSO" when the email domain maps to a registered IdP via `GET /v1/auth/sso-check?domain=`, and that map is empty by default.
 
 **Styling:** the established brand system only — paper `#F8F4EF`, terra `#E8561B`, sage `#3D6B5E`, charcoal `#0D0D0D`; Instrument Serif (display), DM Sans (body), monospace (quote metadata); editorial glassmorphism on overlays; **inline styles exclusively**. No Tailwind, no CSS-in-JS library, no new framework. Skeletons in paper tones, never spinners-on-white; destructive failures are inline banners, never toasts.
 
@@ -281,7 +281,7 @@ Draft and In-Review specs are unreachable from the MCP service *by construction*
 
 ## 5. Auth & Multi-Tenancy
 
-**Supabase Auth** issues every session: magic link, Google OAuth, and SAML 2.0 (Supabase's SSO add-on) for enterprise IdPs — one identity system, so RLS, cookies, and JWT claims are identical regardless of how the user arrived. Sessions live in HttpOnly Secure cookies via `@supabase/ssr`; no token ever reaches `localStorage`.
+**Supabase Auth** issues every session. In Phase 1, magic link is the only sign-in method; Google OAuth is deferred per ADR-005; SAML stays a stub until a contract funds the Supabase plan upgrade. One identity system keeps RLS, cookies, and JWT claims identical when additional methods are enabled later. Sessions live in HttpOnly Secure cookies via `@supabase/ssr`; no token ever reaches `localStorage`.
 
 **Claims** are injected by a Custom Access Token Hook (Postgres function registered with GoTrue):
 ```json
@@ -304,7 +304,7 @@ API user paths execute through PostgREST with the caller's JWT, so the database 
 
 **Append-only enforcement** on `verdicts` and `audit_log`: `REVOKE UPDATE, DELETE FROM ALL` + a `BEFORE UPDATE OR DELETE` trigger that raises — two locks, because history rewriting must be impossible, not discouraged.
 
-**Roles:** `owner` and `member`. Verdicts are open to any member with actor attribution rendered ("Rejected by Maya"); spec approval records `approved_by`; engineer-ness is expressed through MCP tokens and rating links, not membership tier. SAML group → role mapping happens at provision time in the SSO config. The operator console is gated by `is_operator` — set only on founder account(s), never grantable through workspace membership, every action audit-logged with operator identity.
+**Roles:** `owner` and `member`. Verdicts are open to any member with actor attribution rendered ("Rejected by Maya"); spec approval records `approved_by`; engineer-ness is expressed through MCP tokens and rating links, not membership tier. SAML group → role mapping is reserved for the later paid SSO path; Phase 1 ships only the empty-map stub. The operator console is gated by `is_operator` — set only on founder account(s), never grantable through workspace membership, every action audit-logged with operator identity.
 
 **MCP auth is a separate plane** (§6.8): workspace-scoped bearer tokens in `mcp_tokens`, hashed at rest, owner-mintable/revocable — agents never hold user sessions.
 
@@ -606,7 +606,7 @@ evals/               # Braintrust harness + baselines.json (the only file that d
 | 2 | Orchestration | "Revisit a graph framework when the pipeline needs interrupts" | Postgres state machine (`pipeline_runs`/`pipeline_steps` + `Orchestrator`); **LangGraph permanently rejected** | Both human gates are already DB state machines; a checkpointer duplicates state outside the audit-aligned schema. The interrupt case arrived and the answer is rows |
 | 3 | Spec generation model | Undecided (Sonnet implied) | **Claude Opus 4.8** for `specs.generate` + `regenerate_block` | Highest-stakes artifact, lowest volume; <$50/mo at projected volume; engineer-rated quality is the moat metric |
 | 4 | Ticket-class integrations | "Hand-roll until ~7 providers, then reconsider middleware" | **Nango Cloud** for Linear/Jira/Intercom/Zendesk now | The full product crosses v2's own threshold on day one; four hand-rolled OAuth+refresh+webhook stacks is pure undifferentiated liability |
-| 5 | SSO | Deferred | **Supabase Auth SAML 2.0 add-on**; WorkOS rejected | SAML inside the existing IdP: sessions, JWT claims, RLS all unchanged. WorkOS = bridging two identity systems forever |
+| 5 | SSO | Deferred | **SAML stub in Phase 1; Supabase Auth SAML 2.0 add-on only after a paid-plan contract funds it**; WorkOS rejected | SAML stays inside the existing IdP when enabled later: sessions, JWT claims, RLS all unchanged. WorkOS = bridging two identity systems forever |
 | 6 | Payments | Manual invoicing for founding partners | **Stripe Billing**, flat workspace sub + portal + webhook entitlements | Self-serve product needs self-serve billing; manual invoicing doesn't survive partner #11 |
 | 7 | Compliance | Unaddressed | **Vanta → SOC2 Type I now, Type II after observation window** | Mid-market support/CRM data won't connect without it; the architecture already emits the evidence |
 | 8 | Reranker | "Maybe a cross-encoder later" | **Permanently out** | Violates two-vendor rule or zero-ops rule; RRF + Sonnet in-context selection holds at 10⁴–10⁵ chunks/workspace |
