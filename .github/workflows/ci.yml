@@ -19,7 +19,7 @@ jobs:
       - run: ruff check specflow/
       - run: mypy specflow/ --strict --ignore-missing-imports
 
-  # Context 2: pytest unit + integration
+  # Context 2: pytest unit + integration — real Postgres via supabase local stack (no mocks)
   test-unit:
     name: pytest unit+integration
     runs-on: ubuntu-latest
@@ -28,8 +28,17 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
+      - uses: supabase/setup-cli@v1
+        with:
+          version: latest
+      - name: Start local Postgres (supabase) and apply migrations from zero
+        run: |
+          supabase db start
+          supabase db reset --local
       - run: pip install -e ".[dev]"
       - run: pytest tests/unit tests/integration -v --tb=short
+        env:
+          SUPABASE_DB_URL: postgresql://postgres:postgres@127.0.0.1:54322/postgres
 
   # Context 3: pytest api
   test-api:

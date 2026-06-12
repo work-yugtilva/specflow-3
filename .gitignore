@@ -42,3 +42,7 @@ npm-debug.log*
 SpecFlow_*.pdf
 SpecFlow_*.md
 project/
+
+# supabase CLI local artifacts
+supabase/.branches/
+supabase/.temp/
