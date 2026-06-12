@@ -1,0 +1,1 @@
+Supabase branch databases need Pro plan (PaymentRequiredException on create_branch; list_branches errors weirdly: "Project reference is missing when validating permissions"). Free-plan substitute for migration verification: local `supabase db reset` from zero + `supabase db diff` empty. Revisit when org upgrades.

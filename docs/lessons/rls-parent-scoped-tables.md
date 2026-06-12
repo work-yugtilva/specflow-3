@@ -1,0 +1,1 @@
+Four §4.1 tables carry no workspace_id (opportunity_signals, spec_versions, rating_tokens, pipeline_steps) — the "one policy shape" doesn't apply; they need parent-EXISTS policies (join to opportunities/specs/pipeline_runs). Any future child table must pick one: workspace_id column + flat policy, or parent-EXISTS. Never neither.
