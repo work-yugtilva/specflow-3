@@ -86,3 +86,16 @@ def test_insert_cross_tenant_rejected(db, stmt):
     assert isinstance(
         exc.value, psycopg.errors.InsufficientPrivilege | psycopg.errors.RaiseException
     ) or "row-level security" in str(exc.value)
+
+
+def test_signal_cannot_link_foreign_chunk(db):
+    """Own opportunity + another tenant's chunk must be rejected — frequency-pollution hole."""
+    from .conftest import CHUNK_B, OPP_A
+
+    with user_a(db) as cur, pytest.raises(psycopg.errors.Error):
+        cur.execute(
+            "INSERT INTO opportunity_signals "
+            "(opportunity_id, chunk_id, stance, similarity, assigned_by) "
+            "VALUES (%s, %s, 'support', 0.9, 'auto')",
+            (OPP_A, CHUNK_B),
+        )

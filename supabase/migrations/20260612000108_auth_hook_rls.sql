@@ -148,7 +148,12 @@ create policy ws_isolation on billing_subscriptions for all
 create policy ws_isolation on opportunity_signals for all
   using (exists (select 1 from opportunities o
                  where o.id = opportunity_id
-                   and o.workspace_id = any (auth_workspaces())));
+                   and o.workspace_id = any (auth_workspaces()))
+     and exists (select 1 from chunks c
+                 where c.id = chunk_id
+                   and c.workspace_id = any (auth_workspaces())));
+-- chunk-side check closes cross-tenant linkage: own opportunity + foreign chunk
+-- would otherwise pollute opportunity_frequency through the definer-semantics view
 create policy ws_isolation on spec_versions for all
   using (exists (select 1 from specs s
                  where s.id = spec_id
