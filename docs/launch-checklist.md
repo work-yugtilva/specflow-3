@@ -45,3 +45,9 @@ Harvested from next-forge production patterns. Stack adopted: none. Checklist on
 - [ ] Supabase RLS verified from a non-owner JWT
 - [ ] Railway health endpoints 200 for api/worker/mcp
 - [ ] Helicone $40/workspace alert tested (fire a synthetic over-spend)
+
+## §2 deploy note (hook registration does not travel with db push)
+- [ ] Before §3 auth work on hosted: `supabase db push` (migrations 0101-0108) AND register the
+  custom_access_token hook on the hosted project (Management API PATCH or `supabase config push` —
+  beware config.toml carries local-dev site_url; prefer surgical API PATCH). Without it, production
+  JWTs carry no workspace_ids and every user sees empty data.
