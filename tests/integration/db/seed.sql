@@ -2,7 +2,10 @@
 -- Fixed UUIDs mirror tests/integration/db/conftest.py.
 BEGIN;
 
+-- replica mode bypasses raise_immutable() for fixture reset only (superuser session)
+SET LOCAL session_replication_role = replica;
 TRUNCATE workspaces CASCADE;
+SET LOCAL session_replication_role = origin;
 DELETE FROM auth.users WHERE id IN (
   '00000000-0000-0000-0001-00000000000a','00000000-0000-0000-0002-00000000000a',
   '00000000-0000-0000-0001-00000000000b','00000000-0000-0000-0003-00000000000f');
